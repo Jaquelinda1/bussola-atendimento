@@ -1,8 +1,785 @@
-<iframe
-  src="https://sites.google.com/nubank.com.br/bussoladeatendimento"
-  width="100%"
-  height="900"
-  frameborder="0"
-  allow="clipboard-write"
-  style="border:none;width:100%;min-height:900px;display:block">
-</iframe>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Bússola de Atendimento de Diferença de Preços</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --pd:#3a0ca3;--pm:#7209b7;--mid:#9b5de5;
+  --pale:#f3eeff;--pb:#e0d0ff;
+  --gbg:#f0fdf4;--gb:#86efac;--gt:#14532d;
+  --rbg:#fef2f2;--rb:#fecaca;--rt:#7f1d1d;
+  --tx:#1a0533;--sub:#6b6b8a;--w:#ffffff;
+}
+html,body{height:100%;background:var(--w);font-family:'Segoe UI',system-ui,sans-serif;color:var(--tx);font-size:14px;line-height:1.55}
+#app{display:flex;flex-direction:column;min-height:100vh}
+.screen{display:none}
+.screen.active{display:flex;flex-direction:column;flex:1}
+
+/* LOGIN */
+#screen-login{align-items:center;justify-content:center;padding:32px 20px;background:var(--w)}
+.login-card{width:100%;max-width:460px;background:var(--w);border:2px solid var(--pb);border-radius:20px;padding:40px 36px;box-shadow:0 12px 48px rgba(114,9,183,.12)}
+.login-logo{text-align:center;margin-bottom:28px}
+.login-logo-icon{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--pd),var(--pm));display:inline-flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:14px}
+.login-logo h1{font-size:22px;font-weight:800;color:var(--pd)}
+.login-logo p{font-size:13px;color:var(--sub);margin-top:4px}
+.form-group{margin-bottom:18px}
+.form-group label{display:block;font-size:12px;font-weight:700;color:var(--pd);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.form-group input{width:100%;padding:12px 14px;border:2px solid var(--pb);border-radius:10px;font-size:14px;color:var(--tx);outline:none;transition:border-color .2s,box-shadow .2s;background:var(--w)}
+.form-group input:focus{border-color:var(--pm);box-shadow:0 0 0 3px rgba(114,9,183,.12)}
+.form-group input.error{border-color:#ef4444}
+.form-error{font-size:12px;color:#ef4444;margin-top:4px}
+.info-box{background:var(--pale);border:1px solid var(--pb);border-radius:12px;padding:14px 16px;font-size:13px;color:var(--pd);margin-bottom:22px;line-height:1.6}
+.btn-primary{width:100%;padding:13px;border-radius:12px;background:linear-gradient(135deg,var(--pm),var(--pd));color:var(--w);font-size:15px;font-weight:700;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(114,9,183,.35);transition:opacity .15s,transform .1s}
+.btn-primary:hover{opacity:.92}
+.btn-primary:active{transform:scale(.98)}
+
+/* SIM HEADER */
+#screen-sim{flex-direction:column;background:var(--w)}
+.sim-header{background:linear-gradient(135deg,var(--pd),var(--pm));padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 2px 12px rgba(58,12,163,.3)}
+.sim-header-left{display:flex;align-items:center;gap:10px}
+.sim-header-left .icon{font-size:20px}
+.sim-header-title{color:var(--w);font-weight:700;font-size:14px}
+.sim-header-sub{color:#d8b4fe;font-size:12px;margin-top:1px}
+.sim-header-scores{display:flex;gap:14px;align-items:center}
+.score-ok{color:#a3e635;font-weight:800;font-size:13px}
+.score-err{color:#f87171;font-weight:800;font-size:13px}
+.progress-track{height:5px;background:var(--pb);flex-shrink:0}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--pm),var(--pd));transition:width .4s ease}
+
+/* MESSAGES */
+.messages{flex:1;overflow-y:auto;padding:20px 16px;display:flex;flex-direction:column;gap:14px;background:var(--w)}
+.msg-separator{background:linear-gradient(135deg,var(--pd),var(--pm));border-radius:12px;padding:11px 16px;text-align:center;color:var(--w);font-weight:700;font-size:13px;margin:4px 0;box-shadow:0 3px 10px rgba(58,12,163,.25)}
+.msg-client{display:flex;gap:10px;align-items:flex-start}
+.avatar{width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:var(--w)}
+.avatar-client{background:var(--pm)}
+.avatar-agent-ok{background:#16a34a}
+.avatar-agent-err{background:#dc2626}
+.bubble{padding:12px 15px;border-radius:4px 16px 16px 16px;font-size:13.5px;line-height:1.55;max-width:calc(100% - 50px);word-break:break-word}
+.bubble-client{background:var(--pale);border:1px solid var(--pb);color:var(--tx)}
+.msg-agent{display:flex;gap:10px;align-items:flex-start;justify-content:flex-end}
+.bubble-agent-ok{background:var(--gbg);border:1px solid var(--gb);color:var(--gt);border-radius:16px 4px 16px 16px;padding:12px 15px;font-size:13.5px;line-height:1.55;max-width:calc(100% - 50px);word-break:break-word}
+.bubble-agent-err{background:var(--rbg);border:1px solid var(--rb);color:var(--rt);text-decoration:line-through;border-radius:16px 4px 16px 16px;padding:12px 15px;font-size:13.5px;line-height:1.55;max-width:calc(100% - 50px);word-break:break-word}
+.msg-feedback{border-radius:12px;padding:12px 15px;font-size:13px;line-height:1.55;margin:0 4px}
+.msg-feedback.ok{background:var(--gbg);border:1px solid var(--gb);color:var(--gt)}
+.msg-feedback.err{background:var(--rbg);border:1px solid var(--rb);color:var(--rt)}
+
+/* TYPING */
+.typing-indicator{display:flex;align-items:center;gap:5px;padding:12px 18px !important;min-width:56px}
+.typing-indicator span{width:8px;height:8px;border-radius:50%;background:var(--mid);display:inline-block;animation:typingBounce 1.2s infinite ease-in-out}
+.typing-indicator span:nth-child(1){animation-delay:0s}
+.typing-indicator span:nth-child(2){animation-delay:.2s}
+.typing-indicator span:nth-child(3){animation-delay:.4s}
+@keyframes typingBounce{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-6px);opacity:1}}
+
+/* OPTIONS */
+.options-panel{background:var(--w);border-top:2px solid var(--pb);padding:16px;flex-shrink:0;box-shadow:0 -4px 20px rgba(114,9,183,.08)}
+.options-label{font-size:11px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.options-list{display:flex;flex-direction:column;gap:10px}
+.opt-btn{width:100%;text-align:left;padding:13px 15px;border-radius:12px;border:2px solid var(--pb);background:var(--pale);color:var(--tx);font-size:13.5px;line-height:1.55;cursor:pointer;transition:border-color .15s,background .15s,opacity .15s;white-space:normal;word-break:break-word}
+.opt-btn:hover:not(:disabled){border-color:var(--pm);background:#ede7ff}
+.opt-letter{font-weight:800;color:var(--pm);margin-right:8px}
+.opt-btn.wrong{border-color:#ef4444;background:var(--rbg);color:var(--rt);opacity:.75;text-decoration:line-through;cursor:not-allowed}
+.opt-btn.wrong .opt-letter{color:#ef4444}
+.opt-btn.correct{border-color:#22c55e;background:var(--gbg);color:var(--gt);font-weight:600}
+.opt-btn.correct .opt-letter{color:#16a34a}
+.btn-continue{width:100%;padding:13px;border-radius:12px;background:linear-gradient(135deg,var(--pm),var(--pd));color:var(--w);font-size:14px;font-weight:700;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(114,9,183,.3);transition:opacity .15s}
+.btn-continue:hover{opacity:.9}
+
+/* RESULTS */
+#screen-results{align-items:center;justify-content:flex-start;padding:32px 20px;background:var(--w);overflow-y:auto}
+.results-card{width:100%;max-width:540px;background:var(--w);border:2px solid var(--pb);border-radius:20px;padding:36px 32px;box-shadow:0 12px 48px rgba(114,9,183,.12);margin:auto}
+.results-hero{text-align:center;margin-bottom:28px}
+.results-trophy{font-size:52px;margin-bottom:10px}
+.results-hero h2{font-size:22px;font-weight:800;color:var(--pd)}
+.results-hero p{color:var(--sub);margin-top:5px;font-size:14px}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px}
+.stat-box{border-radius:12px;padding:14px;text-align:center;border:1px solid var(--pb);background:var(--pale)}
+.stat-value{font-size:26px;font-weight:800;color:var(--pd)}
+.stat-label{font-size:11px;color:var(--sub);margin-top:3px}
+.stat-box.green{background:var(--gbg);border-color:var(--gb)}
+.stat-box.green .stat-value{color:#15803d}
+.stat-box.red{background:var(--rbg);border-color:var(--rb)}
+.stat-box.red .stat-value{color:#b91c1c}
+.detail-title{font-size:12px;font-weight:700;color:var(--pd);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+.detail-table{border:1px solid var(--pb);border-radius:12px;overflow:hidden;margin-bottom:20px;max-height:280px;overflow-y:auto}
+.detail-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--pb);background:var(--w)}
+.detail-row:nth-child(even){background:var(--pale)}
+.detail-row:last-child{border-bottom:none}
+.dr-q{font-size:12px;font-weight:700;color:var(--tx)}
+.dr-t{font-size:11px;color:var(--sub);margin-top:1px}
+.detail-row-right{display:flex;gap:7px;align-items:center}
+.err-badge{font-size:11px;color:#b91c1c;background:var(--rbg);padding:2px 7px;border-radius:6px}
+.save-status{padding:12px 16px;border-radius:10px;margin-bottom:18px;font-size:13px;text-align:center;border:1px solid var(--pb);background:var(--pale);color:var(--pd)}
+.save-status.ok{background:var(--gbg);border-color:var(--gb);color:var(--gt)}
+.save-status.err{background:var(--rbg);border-color:var(--rb);color:var(--rt)}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="screen-login" class="screen active">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="login-logo-icon">💜</div>
+        <h1>Bússola de Atendimento de Diferença de Preços</h1>
+        <p>Treinamento Cripto · Diferença de Valores</p>
+      </div>
+      <div class="form-group">
+        <label for="inp-name">Nome completo</label>
+        <input id="inp-name" type="text" placeholder="Seu nome completo"/>
+        <div class="form-error" id="err-name"></div>
+      </div>
+      <div class="form-group">
+        <label for="inp-email">E-mail corporativo</label>
+        <input id="inp-email" type="email" placeholder="seu@nubank.com.br"/>
+        <div class="form-error" id="err-email"></div>
+      </div>
+      <div class="info-box">🎯 <strong>15 atendimentos</strong> · 2 fases cada · Múltipla escolha<br/>Seus resultados serão registrados automaticamente na planilha do time.</div>
+      <button class="btn-primary" id="btn-start">Iniciar Treinamento →</button>
+    </div>
+  </div>
+
+  <div id="screen-sim" class="screen">
+    <div class="sim-header">
+      <div class="sim-header-left">
+        <span class="icon">💜</span>
+        <div>
+          <div class="sim-header-title" id="hdr-title">Simulador</div>
+          <div class="sim-header-sub" id="hdr-sub"></div>
+        </div>
+      </div>
+      <div class="sim-header-scores">
+        <span class="score-ok" id="hdr-ok">✅ 0</span>
+        <span class="score-err" id="hdr-err">❌ 0</span>
+      </div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="messages" id="messages"></div>
+    <div class="options-panel" id="options-panel"></div>
+  </div>
+
+  <div id="screen-results" class="screen">
+    <div class="results-card">
+      <div class="results-hero">
+        <div class="results-trophy" id="res-trophy">🏆</div>
+        <h2>Simulação Concluída!</h2>
+        <p id="res-greeting"></p>
+      </div>
+      <div class="stats-grid" id="stats-grid"></div>
+      <div class="detail-title">Detalhe por Questão</div>
+      <div class="detail-table" id="detail-table"></div>
+      <div class="save-status" id="save-status">⏳ Salvando resultados na planilha…</div>
+      <button class="btn-primary" id="btn-restart">🔄 Reiniciar Simulação</button>
+    </div>
+  </div>
+
+</div>
+<script>
+const SHEET_ID="118vPuyKymawHKMB6u89BPLfdAO-hV7EiAhn4uKeW4D4";
+const APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbwIFltk0I_5dvUH9HEKls_fNS64JHSpHoPLVrvZfuG6B8qPCvEW4IP0-J0c_7RX8n_F/exec";
+
+const SCENARIOS=[
+  {id:1,title:"Gráfico Google + Gráfico Nubank vs. Simulação",phases:[
+    {phase:1,label:"Fase 1 – Sondagem",
+     clientMessage:"Vocês estão roubando! Todos os gráficos estão num valor menor do que aparece na hora de eu comprar aqui do Nubank! Por que o preço aqui é sempre maior?",
+     options:[
+       {id:"A",correct:true,text:"Entendo a preocupação, cliente. Mas não se preocupe, estou aqui para te ajudar no que for preciso! Só para eu entender melhor: você notou a diferença de compra com valores por gráficos externos ou no nosso próprio gráfico do app?"},
+       {id:"B",correct:false,text:"Entendo a preocupação, cliente. Mas não se preocupe, estou aqui para te ajudar! O mercado de criptomoedas é descentralizado e cada corretora tem seu próprio preço. Os valores variam por isso e é super normal que isso aconteça."}
+     ],
+     feedbackCorrect:"✅ Correto! Sempre devemos sondar primeiro. O cliente mencionou 'todos os gráficos', precisamos identificar se é externo (Google/Binance) ou interno (gráfico do app).",
+     feedbackWrong:"❌ Não devemos explicar antes de sondar. O cliente disse 'todos os gráficos' mas não especificou se é do Google, Binance ou do nosso app. Precisamos entender ONDE ele viu a diferença antes de explicar."},
+    {phase:2,label:"Fase 2 – Explicação",
+     clientMessage:"Nos dois! Os dois estão diferentes com o valor quando tento comprar, isso não faz sentido.",
+     options:[
+       {id:"A",correct:true,text:"Entendo que ver preços diferentes no aplicativo do Nu comparado a outros lugares pode gerar dúvida, mas vou te explicar! Em relação às plataformas externas: o mercado de criptomoedas é descentralizado, cada corretora reflete a liquidez da sua própria plataforma. Já o nosso gráfico mostra uma média do ativo no momento, servindo como referência de tendência — não como valor de execução. Por isso, use sempre a nossa tela de simulação como base principal!"},
+       {id:"B",correct:false,text:"Entendo que ver preços diferentes no aplicativo do Nu pode gerar dúvida! Isso acontece porque o mercado de criptomoedas é descentralizado e cada corretora tem sua própria liquidez. Por isso os valores podem variar entre plataformas — é completamente normal do mercado."}
+     ],
+     feedbackCorrect:"✅ Perfeito! Como o cliente trouxe DUAS dúvidas (externas + gráfico do app), você explicou ambas corretamente.",
+     feedbackWrong:"❌ O cliente mencionou duas situações: gráfico externo E gráfico do app. Você explicou apenas uma. Quando o cliente traz múltiplas dúvidas, esclareça todas."}
+  ]},
+  {id:2,title:"Falta de Sondagem Inicial",phases:[
+    {phase:1,label:"Fase 1 – Sondagem",
+     clientMessage:"Comprei 3 mil em cripto, mas descontou muito mais no final! Incoerência!",
+     options:[
+       {id:"A",correct:true,text:"Entendo a preocupação, vamos entender o que aconteceu juntos, conte comigo! Para investigar com agilidade: onde você notou essa diferença? Você comparou o valor descontado com a tela de simulação antes de inserir a senha?"},
+       {id:"B",correct:false,text:"Entendo a preocupação, vamos resolver isso juntos! Isso acontece devido ao spread, um custo de intermediação normal do mercado de criptomoedas, além da volatilidade. Vou abrir um chamado para análise detalhada."}
+     ],
+     feedbackCorrect:"✅ Excelente! Você aplicou a sondagem antes de qualquer explicação. Não sabemos ainda se foi spread, volatilidade ou outra situação.",
+     feedbackWrong:"❌ Nunca abra chamado sem entender o que aconteceu! E não explique spread sem confirmar a situação. A regra de ouro: sonde primeiro."},
+    {phase:2,label:"Fase 2 – Explicação",
+     clientMessage:"Isso, eu vi um valor na tela, botei a senha de 4 dígitos e no comprovante cobrou diferente.",
+     options:[
+       {id:"A",correct:true,text:"Entendo! Você notou diferença entre o valor da simulação e o comprovante — quero te tranquilizar e explicar. São dois motivos: 1) Oscilação da moeda: o mercado de cripto muda em milissegundos entre a simulação e o clique final. 2) O Spread: valor embutido no preço para garantir sua operação. Imagine o mercado de carros — a Tabela Fipe é nossa simulação: base próxima do valor real. Mas na hora de fechar 'na loja' (efetivação), há um pequeno ajuste para garantir a conclusão imediata com segurança. O comprovante reflete o preço fiel no instante da conclusão!"},
+       {id:"B",correct:false,text:"Entendo a situação! Para verificar o que aconteceu, precisaria que você me enviasse um print da tela de simulação e do comprovante final. Com essas evidências consigo analisar se houve cobrança indevida."}
+     ],
+     feedbackCorrect:"✅ Perfeito! Você usou a analogia FIPE e explicou volatilidade + spread didaticamente, sem pedir prints.",
+     feedbackWrong:"❌ NUNCA peça prints! O app bloqueia screenshots por segurança. Não precisamos de evidências para explicar spread e volatilidade."}
+  ]},
+  {id:3,title:"Diferença Simulado vs Efetivado",phases:[
+    {phase:1,label:"Fase 1 – Afirmação",
+     clientMessage:"Eu simulei a compra, deu 100,00. Coloquei a senha, cobrou 100,45. Por que essa diferença?",
+     options:[
+       {id:"A",correct:true,text:"Compreendo perfeitamente, conte comigo para te ajudar! Só para confirmar o que entendi: você notou essa diferença exatamente entre a tela de simulação (antes da senha) e o valor que apareceu no comprovante após a confirmação, correto?"},
+       {id:"B",correct:false,text:"Compreendo perfeitamente, conte comigo! Essa diferença acontece por dois motivos: a volatilidade do mercado cripto, que faz os preços mudarem em milissegundos, e o spread, custo de intermediação para garantir a execução imediata. Ambos são fatores normais do mercado."}
+     ],
+     feedbackCorrect:"✅ Correto! Você parafraseou para confirmar o entendimento antes de explicar. Isso demonstra escuta ativa.",
+     feedbackWrong:"❌ Mesmo que o cliente pareça claro, sempre confirme com uma paráfrase antes de explicar. Isso mostra que você está realmente ouvindo."},
+    {phase:2,label:"Fase 2 – Explicação",
+     clientMessage:"Sim, foi exatamente logo depois de colocar a senha.",
+     options:[
+       {id:"A",correct:true,text:"Quero te tranquilizar e explicar por que isso acontece. São dois motivos: 1) Oscilação da moeda: o mercado de cripto muda em milissegundos entre a simulação e o clique final. 2) O Spread: valor embutido no preço para garantir sua operação. Imagine o mercado de carros: a Tabela Fipe é nossa tela de simulação — dá a base do valor. Na hora de fechar 'na loja' (efetivação), há um pequeno ajuste para concluir imediatamente com segurança. O comprovante reflete o preço fiel no instante exato da conclusão!"},
+       {id:"B",correct:false,text:"Quero te tranquilizar! Isso ocorre porque o gráfico do app e valores de outras corretoras mostram médias de mercado, diferentes do preço de execução imediata. Cada plataforma tem sua própria liquidez e frequência de atualização."}
+     ],
+     feedbackCorrect:"✅ Excelente! Você explicou volatilidade + spread com a analogia FIPE de forma completa.",
+     feedbackWrong:"❌ Você explicou sobre gráfico e plataformas externas, mas o cliente perguntou sobre SIMULAÇÃO vs COMPROVANTE. A explicação correta é spread + volatilidade com analogia FIPE."}
+  ]},
+  {id:4,title:"Gráfico Nubank vs Tela de Compra",phases:[
+    {phase:1,label:"Fase 1 – Sondagem",
+     clientMessage:"Eu abri o gráfico e o preço do Bitcoin está 386.000,00, clico pra comprar tá 3 mil a mais. O valor é universal, porque vocês estão mudando o preço da moeda??",
+     options:[
+       {id:"A",correct:true,text:"Entendo seu ponto, cliente. Mas não se preocupe, estou aqui para te ajudar! Só para entender a situação: o valor de 386.000 que você mencionou — você estava olhando o gráfico dentro do nosso próprio aplicativo ou comparando com alguma plataforma externa, como Google ou Binance?"},
+       {id:"B",correct:false,text:"Entendo seu ponto, cliente. Mas não se preocupe! O gráfico de variação mostra uma média da cotação naquele momento, mas o valor de compra é sempre um pouco diferente — isso acontece devido ao spread e à volatilidade do mercado cripto, que muda em milissegundos."}
+     ],
+     feedbackCorrect:"✅ Correto! O cliente não deixou claro se é o gráfico do app ou plataformas externas. Sempre sonde antes de explicar.",
+     feedbackWrong:"❌ Não explique antes de sondar! O cliente pode estar falando do gráfico do app OU de sites externos. Descubra primeiro — a explicação é diferente para cada caso."},
+    {phase:2,label:"Fase 2 – Explicação",
+     clientMessage:"Sim! O gráfico do aplicativo mesmo, ele tá com um valor, eu quero pagar aquele preço no Bitcoin!",
+     options:[
+       {id:"A",correct:true,text:"Certo! O gráfico que você vê no aplicativo mostra uma média da cotação em um momento específico, servindo como guia de tendência — não como valor exato de execução. Na hora de realizar a transação, os valores de compra e venda são diferentes entre si. É parecido com casas de câmbio: o preço para comprar dólar pode ser R$5,52 e para vender R$5,48 — o gráfico mostraria R$5,50, a média. Use sempre a nossa tela de simulação como base principal!"},
+       {id:"B",correct:false,text:"Certo! O valor no gráfico do Nu é atualizado a partir de médias globais de mercado, assim como em outras plataformas. Como cada corretora tem sua própria liquidez, os preços podem variar — e o Nu atualiza constantemente para refletir o valor mais fiel no momento da sua transação."}
+     ],
+     feedbackCorrect:"✅ Perfeito! Você usou a analogia da casa de câmbio (buy/sell) e explicou que o gráfico é informativo, não executável.",
+     feedbackWrong:"❌ Você explicou sobre plataformas externas, mas o cliente perguntou sobre o GRÁFICO DO APP. A explicação correta usa a analogia da casa de câmbio."}
+  ]},
+  {id:5,title:"Spread em Trocas",phases:[
+    {phase:1,label:"Fase 1 – Sondagem",
+     clientMessage:"Vocês falam que é taxa 0 para trocas, mas cobrou taxa sim!",
+     options:[
+       {id:"A",correct:true,text:"Entendo perfeitamente sua preocupação e quero muito te ajudar a entender o que aconteceu! Para investigar com precisão: você notou essa diferença comparando o valor da moeda na tela de simulação com o saldo final que recebeu após a troca?"},
+       {id:"B",correct:false,text:"Entendo a preocupação, mas não se preocupe! A taxa administrativa para trocas é zero — não cobramos taxa de transação. Pode haver pequena diferença devido ao spread, que é diferente de uma taxa. O spread é o custo de intermediação embutido no preço para garantir a execução imediata."}
+     ],
+     feedbackCorrect:"✅ Ótimo! Você sondou antes de explicar. Não sabemos ainda exatamente o que o cliente comparou.",
+     feedbackWrong:"❌ Não explique spread sem confirmar o que o cliente comparou. Primeiro descubra o que gerou a percepção de cobrança."},
+    {phase:2,label:"Fase 2 – Explicação",
+     clientMessage:"Isso, troquei BTC por ETH e o saldo líquido diminuiu.",
+     options:[
+       {id:"A",correct:true,text:"Entendo que você notou diferença entre o valor esperado e o saldo recebido — quero explicar por que acontece. São dois motivos: 1) Oscilação da moeda: o mercado de cripto muda em milissegundos entre a simulação e o clique final. 2) O Spread: valor embutido no preço para garantir a execução imediata. Imagine o mercado de carros: a Tabela Fipe é nossa tela de simulação. Na hora de fechar 'na loja' (efetivação), há um pequeno ajuste para garantir que a troca seja concluída imediatamente com segurança!"},
+       {id:"B",correct:false,text:"Entendo que você notou essa diferença na troca! Isso acontece porque na conversão entre dois ativos existe o que chamamos de liquidez bruta — cada criptomoeda tem seu próprio pool de liquidez e o saldo líquido pode ser menor que o valor bruto calculado na simulação."}
+     ],
+     feedbackCorrect:"✅ Perfeito! Você explicou spread em trocas usando linguagem simples e a analogia FIPE.",
+     feedbackWrong:"❌ Nunca use termos técnicos como 'liquidez bruta' ou 'pool de liquidez' com clientes. Use a analogia FIPE e linguagem simples."}
+  ]},
+  {id:6,title:"USDC vs Dólar",phases:[
+    {phase:1,label:"Fase 1 – Afirmação",
+     clientMessage:"O preço do USDC está diferente do dólar, o aplicativo está bugado, arrumem aí!",
+     options:[
+       {id:"A",correct:true,text:"Entendi sua preocupação e quero te ajudar a entender o que está acontecendo! Só para confirmar: você está comparando a cotação do USDC que aparece no nosso aplicativo com o valor do Dólar americano tradicional que viu em algum site, correto?"},
+       {id:"B",correct:false,text:"Entendi sua preocupação! Vou verificar agora se há algum problema técnico relacionado à cotação do USDC no aplicativo. Se houver inconsistência, vou registrar um chamado para o time técnico investigar."}
+     ],
+     feedbackCorrect:"✅ Correto! Você confirmou o entendimento antes de explicar. O cliente pode estar confundindo USDC (cripto) com USD (moeda fiduciária).",
+     feedbackWrong:"❌ Não abra chamado de bug sem entender! USDC e Dólar tradicional são ativos diferentes. Confirme o que o cliente comparou — não há bug."},
+    {phase:2,label:"Fase 2 – Explicação",
+     clientMessage:"Isso, é para ser igual, já que os dois são dolar, oras!",
+     options:[
+       {id:"A",correct:true,text:"Entendo perfeitamente a sua dúvida! É muito comum esse questionamento, já que os nomes são parecidos. O Dólar americano é a moeda física e comercial dos EUA. Já a USDC é uma criptomoeda (stablecoin). Embora pareada ao dólar para manter o valor 1 para 1, ela funciona em um mercado digital próprio — por isso pode variar levemente em relação ao dólar comercial. O preço que você vê no Nubank já é o valor final da criptomoeda, sem surpresas!"},
+       {id:"B",correct:false,text:"Entendo! USDC espelha o dólar, mas pode haver pequenas variações. Vou abrir um chamado para o time técnico analisar essa divergência."}
+     ],
+     feedbackCorrect:"✅ Perfeito! Você explicou a diferença entre USDC e USD de forma clara e didática, sem abrir chamado desnecessário.",
+     feedbackWrong:"❌ Não abra chamado! USDC é diferente de USD. Não há bug — explique a diferença entre a stablecoin e a moeda fiduciária."}
+  ]},
+  {id:7,title:"Outras Plataformas (Binance)",phases:[
+    {phase:1,label:"Fase 1 – Afirmação",
+     clientMessage:"Poxa, vi no site da Binance que a Solana está mais barata que no Nubank. Por que cobrar a mais? Isso está muito errado!",
+     options:[
+       {id:"A",correct:true,text:"Entendo sua preocupação com os valores e quero te ajudar a entender essa diferença! Só para confirmar: você comparou o preço da Solana que aparece no site da Binance com o valor que está na tela de simulação do nosso aplicativo, correto?"},
+       {id:"B",correct:false,text:"Entendo a preocupação! Mas não se preocupe — o mercado de criptomoedas é descentralizado, o que significa que cada corretora tem sua própria precificação baseada em liquidez e oferta de mercado. Vou verificar se há alguma divergência fora do padrão."}
+     ],
+     feedbackCorrect:"✅ Ótimo! Você confirmou o que foi comparado antes de explicar.",
+     feedbackWrong:"❌ Não prometa verificação! É normal plataformas terem preços diferentes. Confirme o que ele comparou, depois explique com segurança."},
+    {phase:2,label:"Fase 2 – Explicação",
+     clientMessage:"Sim, foi isso.",
+     options:[
+       {id:"A",correct:true,text:"Entendo que ver preços diferentes no Nu comparado a outros lugares pode gerar dúvida! O mercado de criptomoedas é descentralizado — cada corretora reflete a liquidez da sua própria plataforma. Aqui no Nu, os preços são atualizados em tempo real. Muitos sites de outras plataformas apresentam apenas uma média global daquela cotação — esse valor é informativo e nem sempre reflete o preço real para execução imediata. O ideal é sempre usar a nossa tela de simulação como sua base principal!"},
+       {id:"B",correct:false,text:"Entendo! Isso ocorre porque a Binance, assim como o Google e outros sites, exibem o preço médio global do ativo — uma média das cotações de várias corretoras ao redor do mundo. Esse preço é apenas informativo e não representa o valor de qualquer corretora específica."}
+     ],
+     feedbackCorrect:"✅ Perfeito! Você explicou sobre descentralização e liquidez própria de cada plataforma.",
+     feedbackWrong:"❌ O cliente perguntou sobre BINANCE (outra corretora), não Google. Foque na descentralização do mercado e na liquidez própria de cada plataforma."}
+  ]},
+  {id:8,title:"Cliente Insatisfeito com Explicação Anterior",phases:[
+    {phase:1,label:"Fase 1 – Sondagem",
+     clientMessage:"Já me explicaram isso antes, mas não estou satisfeito! Vocês estão cobrando caro demais comparado com outras corretoras!",
+     options:[
+       {id:"A",correct:true,text:"Entendo perfeitamente sua insatisfação e quero muito te ajudar a esclarecer isso com mais clareza dessa vez! Para eu entender melhor o seu cenário: você está comparando o preço da nossa simulação com qual outra corretora ou plataforma especificamente?"},
+       {id:"B",correct:false,text:"Entendo a insatisfação e peço desculpas se a explicação anterior não ficou clara! Nossos preços são competitivos e transparentes — como o mercado de criptomoedas é descentralizado, cada corretora tem sua precificação própria baseada em liquidez. Essa variação é completamente normal."}
+     ],
+     feedbackCorrect:"✅ Excelente! Você demonstrou empatia e sondou novamente para garantir clareza total antes de explicar.",
+     feedbackWrong:"❌ Não seja defensivo sobre os preços do Nubank! O cliente está insatisfeito — acolha e sonde para entender exatamente o que ele comparou."},
+    {phase:2,label:"Fase 2 – Explicação",
+     clientMessage:"Com a Binance e a Coinbase! Lá está bem mais barato!",
+     options:[
+       {id:"A",correct:true,text:"Entendo que ver preços diferentes no Nu comparado a outros lugares pode gerar dúvida! O mercado de criptomoedas é descentralizado — cada corretora reflete a liquidez da sua própria plataforma. Aqui no Nu, os preços são atualizados em tempo real para garantir o valor mais fiel no momento exato da sua transação. Muitos sites apresentam apenas médias informativas que nem sempre refletem o preço real de compra imediata. O ideal é sempre usar a nossa tela de simulação como base principal!"},
+       {id:"B",correct:false,text:"Entendo a comparação! A Binance e a Coinbase são exchanges globais com volumes de negociação muito maiores, o que permite spreads menores. Mas no Nu você tem a conveniência, segurança e simplicidade que já conhece, com toda a integração com sua conta Nubank."}
+     ],
+     feedbackCorrect:"✅ Perfeito! Você explicou descentralização e liquidez própria sem menosprezar outras plataformas.",
+     feedbackWrong:"❌ NUNCA diga que outras têm 'volumes maiores' — pode parecer que somos piores. Explique que cada plataforma tem liquidez própria, é natural do mercado."}
+  ]},
+  {id:9,title:"Cliente Questiona Falta de Aviso sobre Spread",phases:[
+    {phase:1,label:"Fase 1 – Afirmação",
+     clientMessage:"Por que vocês não avisam sobre esse spread antes? Fui pego de surpresa!",
+     options:[
+       {id:"A",correct:true,text:"Entendo perfeitamente sua preocupação e quero te ajudar! Só para confirmar o que entendi: você viu uma diferença entre o valor da tela de simulação e o que foi cobrado no comprovante final, e ficou com a sensação de que não houve aviso sobre isso, correto?"},
+       {id:"B",correct:false,text:"Entendo a preocupação! Mas quero te tranquilizar: o Nubank tem sim um aviso sobre o spread no aplicativo. Na tela de confirmação, antes de você inserir a senha de 4 dígitos, existe um ícone de interrogação (?) que, ao ser clicado, explica que pode haver variações no valor final."}
+     ],
+     feedbackCorrect:"✅ Correto! Você confirmou a situação antes de explicar sobre o ícone. Demonstra escuta ativa.",
+     feedbackWrong:"❌ Não seja defensivo dizendo 'temos sim o aviso'! Isso soa como confronto. Primeiro confirme o que aconteceu com empatia."},
+    {phase:2,label:"Fase 2 – Explicação",
+     clientMessage:"Sim, e não vi aviso nenhum!",
+     options:[
+       {id:"A",correct:true,text:"Entendo! Quero te tranquilizar: no nosso app existe sim transparência sobre isso. Na tela de confirmação, antes de inserir a senha de 4 dígitos, aparece um ícone de interrogação (?) — ao clicar nele, você encontra a explicação de que pode haver pequenas variações no valor final devido à volatilidade e ao spread, que garante a conclusão imediata da transação. Está ali justamente para trazer transparência antes de você confirmar!"},
+       {id:"B",correct:false,text:"Entendo sua percepção! De fato o aviso existe no app, mas reconheço que pode estar em local pouco visível. Vou registrar esse feedback para o time de produto avaliar a possibilidade de tornar o aviso mais destacado."}
+     ],
+     feedbackCorrect:"✅ Perfeito! Você explicou sobre o ícone de interrogação de forma empática e transparente, sem prometer melhorias.",
+     feedbackWrong:"❌ Nunca prometa 'vai registrar para o time de produto'! O ícone já existe e funciona. Explique onde está e como acessar, sem assumir culpa."}
+  ]},
+  {id:10,title:"Cliente Quer Saber a Cotação Exata",phases:[
+    {phase:1,label:"Fase 1 – Afirmação",
+     clientMessage:"Quero saber qual foi a cotação exata que vocês usaram na minha compra!",
+     options:[
+       {id:"A",correct:true,text:"Entendo perfeitamente! Essa informação está disponível para você e vou te ajudar a encontrá-la. Para confirmar: você já tem o comprovante da transação disponível no aplicativo ou prefere que eu te explique como acessá-lo?"},
+       {id:"B",correct:false,text:"Entendo! Vou verificar aqui no sistema a cotação exata que foi aplicada na sua transação e te retorno com essa informação detalhada assim que possível."}
+     ],
+     feedbackCorrect:"✅ Correto! Você orientou o cliente ao comprovante, que é a fonte oficial com a cotação exata.",
+     feedbackWrong:"❌ Não consulte 'no sistema' para o cliente! A cotação exata está no COMPROVANTE no aplicativo do próprio cliente."},
+    {phase:2,label:"Fase 2 – Orientação",
+     clientMessage:"Sim, está aqui comigo.",
+     options:[
+       {id:"A",correct:true,text:"Perfeito! No comprovante você encontra todas as informações da transação, incluindo a cotação exata que foi aplicada. Esse é o valor mais preciso, pois reflete o preço do mercado no instante em que a operação foi concluída. Se precisar acessar novamente: Criptomoedas → Histórico → selecionar a transação → Ver comprovante. Qualquer outra dúvida, estou aqui!"},
+       {id:"B",correct:false,text:"Perfeito! Para confirmar se a cotação aplicada está correta, precisaria que você me enviasse um print do comprovante. Com essa evidência consigo verificar no sistema se o valor cobrado está dentro do esperado."}
+     ],
+     feedbackCorrect:"✅ Excelente! Você orientou sobre o comprovante sem pedir prints e passou o caminho completo de acesso.",
+     feedbackWrong:"❌ NUNCA peça prints! O app bloqueia por segurança. O comprovante é a fonte oficial — oriente o cliente a consultá-lo diretamente."}
+  ]},
+  {id:11,title:"Problema ao Vender Bitcoin",phases:[
+    {phase:1,label:"Fase 1 – Afirmação",
+     clientMessage:"Estou com problema em vender os meus bitcoins, vocês estão me roubando. O valor do bitcoin no aplicativo está com preço diferente do que é o correto, agora mesmo o valor de mercado dele está 507.627, e no aplicativo do banco está 3 mil a menos.",
+     options:[
+       {id:"A",correct:true,text:"Entendo sua preocupação com essa diferença e quero te ajudar a entender o que está acontecendo! Só para confirmar: o valor de 507.627 que você mencionou como 'valor de mercado' — você viu esse número em alguma plataforma externa, como Google, Binance ou outro site de cotação?"},
+       {id:"B",correct:false,text:"Entendo a preocupação e quero te tranquilizar! Não se trata de roubo — essa diferença acontece porque o valor de venda é sempre um pouco menor que o de compra, devido ao spread. O spread é um custo de intermediação para garantir que sua venda seja executada de forma imediata."}
+     ],
+     feedbackCorrect:"✅ Ótimo! Você confirmou que ele estava olhando uma fonte externa, antes de explicar.",
+     feedbackWrong:"❌ Não explique antes de confirmar a fonte! O cliente pode estar comparando com o gráfico do app ou com plataformas externas — descubra primeiro."},
+    {phase:2,label:"Fase 2 – Explicação",
+     clientMessage:"Vi no Google! O preço do Google é o preço real, não tem como estar errado!",
+     options:[
+       {id:"A",correct:true,text:"Entendo perfeitamente a sua dúvida ao comparar os valores do Nubank com os preços do Google! O Google age como uma vitrine: mostra uma média global das negociações de várias corretoras ao redor do mundo. Como o mercado tem alta volatilidade (valores mudam em frações de segundo), essa média é apenas informativa — serve como termômetro, mas não é o valor final para compra ou venda imediata. Por isso, aqui no Nu os preços são atualizados em tempo real para garantir o valor mais fiel no momento exato da sua transação!"},
+       {id:"B",correct:false,text:"Entendo que o Google parece confiável, mas o spread de venda também influencia o valor — calculado separadamente do spread de compra, com base no bid/ask do mercado. Por isso existe diferença entre o Google e a tela de venda."}
+     ],
+     feedbackCorrect:"✅ Perfeito! Você usou a analogia da 'vitrine' para explicar que o Google mostra média, não preço de execução.",
+     feedbackWrong:"❌ Não use termos técnicos como 'bid/ask'! Use a analogia da vitrine — o Google mostra média global informativa, não preço real de execução."}
+  ]},
+  {id:12,title:"Valor da Cripto 'Não Atualiza'",phases:[
+    {phase:1,label:"Fase 1 – Sondagem",
+     clientMessage:"Queria entender porque o valor da cripto não está atualizado na venda, esse valor não está sendo alterado mesmo com a variação da cripto.",
+     options:[
+       {id:"A",correct:true,text:"Entendo sua preocupação e quero te ajudar a entender o que está acontecendo! Para identificar melhor: você está olhando o preço na tela de simulação de compra/venda ou está comparando com outra referência, como uma plataforma externa ou o gráfico de variação do aplicativo?"},
+       {id:"B",correct:false,text:"Entendo a preocupação! Nosso sistema é atualizado em tempo real e não deve apresentar esse comportamento. Pode ser um problema técnico momentâneo — vou registrar um chamado para o time de tecnologia investigar."}
+     ],
+     feedbackCorrect:"✅ Correto! Você sondou antes de abrir chamado. O cliente pode estar comparando com uma referência externa.",
+     feedbackWrong:"❌ Não abra chamado sem entender! Descubra primeiro o que o cliente está comparando — provavelmente não há bug algum."},
+    {phase:2,label:"Fase 2 – Explicação",
+     clientMessage:"É o preço mundial, da onde mais seria!",
+     options:[
+       {id:"A",correct:true,text:"Entendo que pode parecer assim! Mas vou te explicar algo importante: no mercado de criptomoedas, não existe um 'preço mundial único'. O mercado é descentralizado — cada corretora e plataforma reflete sua própria liquidez. Por isso, o valor que você vê no Google, na Binance ou em qualquer site é uma média informativa daquela plataforma, não o preço exato que será aplicado aqui no Nu. Aqui nossos preços são atualizados em tempo real para refletir o valor mais fiel no momento da sua transação!"},
+       {id:"B",correct:false,text:"Entendo! Vou verificar junto ao time técnico se há alguma lentidão na atualização de preços e retorno assim que tiver uma posição. Enquanto isso, você pode tentar fechar e reabrir o aplicativo."}
+     ],
+     feedbackCorrect:"✅ Perfeito! Você explicou que não existe 'preço mundial único' e educou o cliente sobre a descentralização.",
+     feedbackWrong:"❌ Não abra chamado nem mande reiniciar o app! O mercado cripto é descentralizado — não há preço único. Explique isso claramente."}
+  ]},
+  {id:13,title:"Cliente Frustrado com Lucro Menor",phases:[
+    {phase:1,label:"Fase 1 – Sondagem",
+     clientMessage:"Comprei Bitcoin por 90 mil, agora está 95 mil, mas na hora de vender mostra que vou receber menos lucro do que esperava!",
+     options:[
+       {id:"A",correct:true,text:"Entendo sua preocupação e sei como é importante ter clareza sobre seus rendimentos! Para te ajudar da melhor forma: você está comparando o valor de venda que aparece na simulação com qual referência — com o gráfico de variação do app, com o preço em outra plataforma, ou o cálculo era baseado em outro número?"},
+       {id:"B",correct:false,text:"Entendo a preocupação! Isso acontece porque há o spread de venda, que é diferente do spread de compra. Quando você comprou, pagou um valor um pouco acima do mercado, e quando vende, recebe um valor um pouco abaixo — essa é a dinâmica do spread bidirecional."}
+     ],
+     feedbackCorrect:"✅ Ótimo! Você sondou antes de explicar. O cliente pode estar comparando com várias fontes diferentes.",
+     feedbackWrong:"❌ Não explique 'spread bidirecional' sem entender o que ele comparou! Sonde primeiro — pode ser gráfico, plataforma externa ou cálculo errado."},
+    {phase:2,label:"Fase 2 – Explicação",
+     clientMessage:"Estou olhando o gráfico, lá marca 95 mil, mas na simulação de venda dá 93 mil!",
+     options:[
+       {id:"A",correct:true,text:"Certo! O gráfico que você vê no aplicativo mostra uma média da cotação em um momento específico — é um guia de tendência, não o valor exato de execução. Na hora de realizar a transação, os valores de compra e venda são diferentes entre si. É parecido com casas de câmbio: comprar dólar pode ser R$5,52 e vender R$5,48 — o gráfico mostraria R$5,50, a média dos dois. Use sempre a nossa tela de simulação como base principal — ela mostra o valor mais aproximado para aquele momento!"},
+       {id:"B",correct:false,text:"Certo! A diferença entre os R$95.000 do gráfico e os R$93.000 da simulação é composta pelo spread de venda e pela volatilidade. O spread de venda é sempre calculado separadamente do spread de compra, e pode variar de acordo com a liquidez disponível no momento em que você decide vender."}
+     ],
+     feedbackCorrect:"✅ Perfeito! Você usou a analogia da casa de câmbio para explicar buy/sell de forma didática.",
+     feedbackWrong:"❌ Não fale 'spread de venda vs compra' sem analogia! Use a casa de câmbio para explicar que o gráfico mostra a média — não o preço de execução."}
+  ]},
+  {id:14,title:"Valor Oscila Muito na Simulação",phases:[
+    {phase:1,label:"Fase 1 – Sondagem",
+     clientMessage:"Não entendo por que o valor fica mudando tanto! A cada segundo que atualizo a tela muda tudo!",
+     options:[
+       {id:"A",correct:true,text:"Entendo que isso pode gerar insegurança! É uma boa pergunta. Você está atualizando qual tela especificamente — a simulação de compra ou venda, ou está olhando para o gráfico de variação de preço do aplicativo?"},
+       {id:"B",correct:false,text:"Entendo! Mas pode ficar tranquilo, pois isso é completamente normal no mercado de criptomoedas. As criptos são extremamente voláteis e os preços mudam a cada milissegundo com base na oferta e demanda global — é uma característica inerente desse mercado."}
+     ],
+     feedbackCorrect:"✅ Correto! Você sondou antes de explicar. Pode ser volatilidade normal da simulação OU confusão com o gráfico.",
+     feedbackWrong:"❌ Não explique sem sondar! Descubra se ele está vendo a simulação (que muda mesmo) ou o gráfico — são situações com explicações diferentes."},
+    {phase:2,label:"Fase 2 – Explicação",
+     clientMessage:"A simulação! Coloco o valor, aparece uma quantidade, atualizo e já muda!",
+     options:[
+       {id:"A",correct:true,text:"Entendo! O mercado de criptomoedas funciona 24h por dia, 7 dias por semana, e os preços mudam em frações de segundo devido à oferta e demanda global. Nossa tela de simulação reflete o mercado em tempo real — cada vez que você atualiza, está vendo o preço exato daquele milissegundo. Isso pode parecer instável, mas é o mercado real funcionando com total transparência! Por isso, quando você decidir realizar a operação, vá direto à confirmação — o valor na simulação é o mais próximo do que será executado naquele momento."},
+       {id:"B",correct:false,text:"Entendo! O mercado cripto é volátil, mas nossa plataforma tem um mecanismo de proteção: quando você clica em comprar, o valor da simulação fica congelado por aproximadamente 30 segundos para que você possa revisar com calma antes de inserir a senha."}
+     ],
+     feedbackCorrect:"✅ Perfeito! Você explicou volatilidade real de forma clara e orientou sobre agir com decisão.",
+     feedbackWrong:"❌ NUNCA diga que 'congelamos o valor por 30 segundos'! Isso é incorreto — a simulação reflete tempo real sempre. Explique a volatilidade natural do mercado."}
+  ]},
+  {id:15,title:"Comparação com Google – Suspeita de Manipulação",phases:[
+    {phase:1,label:"Fase 1 – Sondagem",
+     clientMessage:"Pesquisei no Google o preço do Ethereum e está diferente do app! Vocês manipulam os preços?",
+     options:[
+       {id:"A",correct:true,text:"Entendo sua preocupação e quero esclarecer isso com toda a transparência! Só para eu entender melhor: você comparou o valor que aparece no Google com qual tela do nosso aplicativo — era o gráfico de variação de preço ou a tela de simulação de compra?"},
+       {id:"B",correct:false,text:"Entendo a preocupação, mas posso te garantir com total segurança que não há nenhum tipo de manipulação de preços por parte do Nubank. O Google mostra uma média global de diversas corretoras, enquanto cada plataforma tem seu próprio preço baseado em liquidez — a diferença é natural."}
+     ],
+     feedbackCorrect:"✅ Correto! Você sondou antes de explicar. O cliente pode ter comparado Google com gráfico OU com simulação — a explicação é diferente para cada caso.",
+     feedbackWrong:"❌ Não seja defensivo falando 'não manipulamos'! Isso pode soar como culpa. Primeiro sonde, depois explique com calma."},
+    {phase:2,label:"Fase 2 – Explicação",
+     clientMessage:"Com a simulação! No Google mostra um valor, no app mostra outro na hora de comprar!",
+     options:[
+       {id:"A",correct:true,text:"Entendo perfeitamente a sua dúvida ao comparar os valores do Nubank com os preços do Google! O Google age como uma vitrine: mostra uma média global das negociações de várias corretoras ao redor do mundo. Como o mercado tem alta volatilidade (valores mudam em frações de segundo), essa média é apenas informativa — serve como termômetro, mas não é o valor final para compra ou venda imediata. Por isso, aqui no Nu os preços são atualizados em tempo real. A nossa tela de simulação acompanha o mercado instantaneamente para te mostrar a realidade daquele segundo!"},
+       {id:"B",correct:false,text:"Entendo a comparação! O Google exibe o preço médio do mercado, que é diferente do preço de execução. Cada corretora tem sua liquidez própria, por isso há diferença. É normal e esperado."}
+     ],
+     feedbackCorrect:"✅ Perfeito! Você explicou de forma completa sobre o Google (vitrine/média global) vs plataforma (execução em tempo real).",
+     feedbackWrong:"❌ Sua resposta está correta, mas muito curta e seca. Use a analogia da 'vitrine' e mantenha o tom empático — o Jeito Nu faz toda a diferença."}
+  ]}
+];
+
+// ── STATE ──────────────────────────────────────────────────────────────────────
+let S={
+  userName:"",userEmail:"",startTime:null,
+  scenarioIdx:0,phaseIdx:0,
+  correctAnswers:0,totalErrors:0,results:[],
+  currentErrors:0,currentFirstCorrect:null,
+  wrongSelected:null
+};
+const TOTAL_PHASES=SCENARIOS.reduce((s,sc)=>s+sc.phases.length,0);
+
+// ── HELPERS ────────────────────────────────────────────────────────────────────
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+}
+function scrollBottom(){const m=document.getElementById('messages');if(m)m.scrollTop=m.scrollHeight;}
+function sc(){return SCENARIOS[S.scenarioIdx];}
+function ph(){return sc().phases[S.phaseIdx];}
+function completedPhases(){
+  let c=0;
+  for(let i=0;i<S.scenarioIdx;i++)c+=SCENARIOS[i].phases.length;
+  return c+S.phaseIdx;
+}
+
+// ── RENDER ─────────────────────────────────────────────────────────────────────
+function appendEl(el){document.getElementById('messages').appendChild(el);scrollBottom();}
+
+function renderSep(text){
+  const el=document.createElement('div');
+  el.className='msg-separator';
+  el.textContent=text;
+  appendEl(el);
+}
+
+function renderClient(text,cb){
+  const m=document.getElementById('messages');
+  // typing indicator
+  const row=document.createElement('div');row.className='msg-client';
+  const av=document.createElement('div');av.className='avatar avatar-client';av.textContent='C';
+  const bub=document.createElement('div');bub.className='bubble bubble-client typing-indicator';
+  bub.innerHTML='<span></span><span></span><span></span>';
+  row.appendChild(av);row.appendChild(bub);m.appendChild(row);scrollBottom();
+
+  const delay=Math.min(2200,Math.max(800,text.length*16));
+  setTimeout(()=>{
+    m.removeChild(row);
+    // real bubble with typewriter
+    const row2=document.createElement('div');row2.className='msg-client';
+    const av2=document.createElement('div');av2.className='avatar avatar-client';av2.textContent='C';
+    const bub2=document.createElement('div');bub2.className='bubble bubble-client';
+    row2.appendChild(av2);row2.appendChild(bub2);m.appendChild(row2);scrollBottom();
+    let i=0;
+    const spd=Math.min(16,Math.max(5,Math.round(800/text.length)));
+    const t=setInterval(()=>{
+      bub2.textContent=text.slice(0,++i);
+      scrollBottom();
+      if(i>=text.length){clearInterval(t);if(cb)cb();}
+    },spd);
+  },delay);
+}
+
+function renderAgent(text,correct){
+  const row=document.createElement('div');row.className='msg-agent';
+  const bub=document.createElement('div');
+  bub.className=correct?'bubble-agent-ok':'bubble-agent-err';
+  bub.textContent=text;
+  const av=document.createElement('div');
+  av.className='avatar '+(correct?'avatar-agent-ok':'avatar-agent-err');
+  av.textContent=correct?'✓':'✗';
+  row.appendChild(bub);row.appendChild(av);appendEl(row);
+}
+
+function renderFeedback(text,correct){
+  const el=document.createElement('div');
+  el.className='msg-feedback '+(correct?'ok':'err');
+  el.textContent=text;appendEl(el);
+}
+
+// ── HEADER ─────────────────────────────────────────────────────────────────────
+function updateHeader(){
+  document.getElementById('hdr-title').textContent=S.userName.split(' ')[0]+' · Atendimento '+sc().id+'/15';
+  document.getElementById('hdr-sub').textContent=ph().label;
+  document.getElementById('hdr-ok').textContent='✅ '+S.correctAnswers;
+  document.getElementById('hdr-err').textContent='❌ '+S.totalErrors;
+  document.getElementById('progress-fill').style.width=Math.round((completedPhases()/TOTAL_PHASES)*100)+'%';
+}
+
+// ── OPTIONS ────────────────────────────────────────────────────────────────────
+function renderOptions(){
+  const panel=document.getElementById('options-panel');
+  panel.innerHTML='<div class="options-label">Escolha a resposta mais adequada:</div><div class="options-list" id="options-list"></div>';
+  ph().options.forEach(opt=>{
+    const btn=document.createElement('button');
+    btn.className='opt-btn';
+    btn.id='opt-'+opt.id;
+    const letter=document.createElement('span');
+    letter.className='opt-letter';
+    letter.textContent=opt.id+')';
+    btn.appendChild(letter);
+    btn.appendChild(document.createTextNode(opt.text));
+    btn.onclick=(function(o){return function(){handleOption(o);};})(opt);
+    document.getElementById('options-list').appendChild(btn);
+  });
+}
+
+function renderContinueBtn(){
+  const isLast=S.scenarioIdx===SCENARIOS.length-1&&S.phaseIdx===sc().phases.length-1;
+  const panel=document.getElementById('options-panel');
+  panel.innerHTML='';
+  const btn=document.createElement('button');
+  btn.className='btn-continue';
+  btn.textContent=isLast?'Ver Resultado Final 🏁':'Próxima Fase →';
+  btn.onclick=handleContinue;
+  panel.appendChild(btn);
+}
+
+// ── HANDLE OPTION ──────────────────────────────────────────────────────────────
+function handleOption(opt){
+  if(opt.id===S.wrongSelected)return;
+  renderAgent(opt.text,opt.correct);
+  if(opt.correct){
+    renderFeedback(ph().feedbackCorrect,true);
+    if(S.currentFirstCorrect===null){S.currentFirstCorrect=true;S.correctAnswers++;document.getElementById('hdr-ok').textContent='✅ '+S.correctAnswers;}
+    ph().options.forEach(o=>{
+      const b=document.getElementById('opt-'+o.id);
+      if(b){b.disabled=true;if(o.correct)b.classList.add('correct');}
+    });
+    renderContinueBtn();
+  }else{
+    renderFeedback(ph().feedbackWrong,false);
+    S.totalErrors++;S.currentErrors++;
+    if(S.currentFirstCorrect===null)S.currentFirstCorrect=false;
+    document.getElementById('hdr-err').textContent='❌ '+S.totalErrors;
+    S.wrongSelected=opt.id;
+    const wb=document.getElementById('opt-'+opt.id);if(wb){wb.classList.add('wrong');wb.disabled=true;}
+    ph().options.filter(o=>o.correct).forEach(o=>{const b=document.getElementById('opt-'+o.id);if(b)b.classList.add('correct');});
+  }
+  scrollBottom();
+}
+
+// ── HANDLE CONTINUE ────────────────────────────────────────────────────────────
+function handleContinue(){
+  S.results.push({scenarioId:sc().id,scenarioTitle:sc().title,phase:ph().phase,phaseLabel:ph().label,firstAttemptCorrect:S.currentFirstCorrect,errors:S.currentErrors});
+  S.currentErrors=0;S.currentFirstCorrect=null;S.wrongSelected=null;
+  const nextPhase=S.phaseIdx+1;
+  if(nextPhase<sc().phases.length){
+    S.phaseIdx=nextPhase;updateHeader();
+    document.getElementById('options-panel').innerHTML='';
+    renderClient(ph().clientMessage,()=>renderOptions());
+  }else{
+    const nextScenario=S.scenarioIdx+1;
+    if(nextScenario<SCENARIOS.length){
+      S.scenarioIdx=nextScenario;S.phaseIdx=0;updateHeader();
+      renderSep('📋 Atendimento '+sc().id+'/15 — '+sc().title);
+      document.getElementById('options-panel').innerHTML='';
+      renderClient(ph().clientMessage,()=>renderOptions());
+    }else{showResults();}
+  }
+}
+
+// ── START ──────────────────────────────────────────────────────────────────────
+function startSimulator(){
+  const nameEl=document.getElementById('inp-name');
+  const emailEl=document.getElementById('inp-email');
+  const errN=document.getElementById('err-name');
+  const errE=document.getElementById('err-email');
+  errN.textContent='';nameEl.classList.remove('error');
+  errE.textContent='';emailEl.classList.remove('error');
+  let ok=true;
+  if(!nameEl.value.trim()){errN.textContent='Nome é obrigatório';nameEl.classList.add('error');ok=false;}
+  const ev=emailEl.value.trim();
+  if(!ev){errE.textContent='E-mail é obrigatório';emailEl.classList.add('error');ok=false;}
+  else if(!/\S+@\S+\.\S+/.test(ev)){errE.textContent='E-mail inválido';emailEl.classList.add('error');ok=false;}
+  if(!ok)return;
+  // reset state
+  S={userName:nameEl.value.trim(),userEmail:ev,startTime:Date.now(),scenarioIdx:0,phaseIdx:0,correctAnswers:0,totalErrors:0,results:[],currentErrors:0,currentFirstCorrect:null,wrongSelected:null};
+  showScreen('sim');
+  document.getElementById('messages').innerHTML='';
+  document.getElementById('options-panel').innerHTML='';
+  updateHeader();
+  renderSep('📋 Atendimento 1/15 — '+SCENARIOS[0].title);
+  renderClient(SCENARIOS[0].phases[0].clientMessage,()=>renderOptions());
+}
+
+// ── CONFETTI ───────────────────────────────────────────────────────────────────
+function launchConfetti(){
+  var colors=['#7209b7','#3a0ca3','#9b5de5','#c77dff','#f72585','#4cc9f0','#a3e635','#ffd60a'];
+  var canvas=document.createElement('canvas');
+  canvas.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;';
+  document.body.appendChild(canvas);
+  var ctx=canvas.getContext('2d');
+  canvas.width=window.innerWidth;
+  canvas.height=window.innerHeight;
+
+  var pieces=[];
+  for(var i=0;i<160;i++){
+    pieces.push({
+      x:Math.random()*canvas.width,
+      y:-20-Math.random()*canvas.height*0.5,
+      w:8+Math.random()*8,
+      h:5+Math.random()*5,
+      color:colors[Math.floor(Math.random()*colors.length)],
+      rot:Math.random()*Math.PI*2,
+      rotSpeed:(Math.random()-0.5)*0.15,
+      vx:(Math.random()-0.5)*3,
+      vy:2.5+Math.random()*3.5,
+      opacity:1
+    });
+  }
+
+  var start=null;
+  var duration=4500;
+  function frame(ts){
+    if(!start)start=ts;
+    var elapsed=ts-start;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    var alive=false;
+    pieces.forEach(function(p){
+      if(p.y>canvas.height+20)return;
+      alive=true;
+      p.x+=p.vx;p.y+=p.vy;p.rot+=p.rotSpeed;
+      if(elapsed>duration*0.6)p.opacity=Math.max(0,p.opacity-0.012);
+      ctx.save();
+      ctx.globalAlpha=p.opacity;
+      ctx.translate(p.x,p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle=p.color;
+      ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      ctx.restore();
+    });
+    if(alive&&elapsed<duration+1000)requestAnimationFrame(frame);
+    else{canvas.remove();}
+  }
+  requestAnimationFrame(frame);
+}
+
+// ── RESULTS ────────────────────────────────────────────────────────────────────
+function showResults(){
+  var total=S.results.length;
+  var correct=S.results.filter(function(r){return r.firstAttemptCorrect;}).length;
+  var errors=S.results.reduce(function(s,r){return s+r.errors;},0);
+  var pct=Math.round((correct/total)*100);
+  var perfect=correct===total; // 30/30 na primeira tentativa
+
+  showScreen('results');
+
+  // Troféu e mensagem de parabéns
+  document.getElementById('res-trophy').textContent=perfect?'🏆':pct>=80?'🥇':pct>=60?'🎯':'💪';
+
+  var greeting='';
+  if(perfect){
+    greeting='🎉 Parabéns, '+S.userName+'! Você acertou todas as questões de primeira — desempenho perfeito!';
+  }else if(pct>=80){
+    greeting='Muito bem, '+S.userName+'! Excelente desempenho — continue assim!';
+  }else if(pct>=60){
+    greeting='Bom trabalho, '+S.userName+'! Revise os pontos de atenção e você chegará lá!';
+  }else{
+    greeting='Não desanime, '+S.userName+'! Revise o conteúdo e tente novamente — você melhora a cada tentativa!';
+  }
+  document.getElementById('res-greeting').textContent=greeting;
+
+  // Banner extra de parabéns para nota perfeita
+  var heroEl=document.querySelector('.results-hero');
+  var existing=document.getElementById('perfect-banner');
+  if(existing)existing.remove();
+  if(perfect){
+    var banner=document.createElement('div');
+    banner.id='perfect-banner';
+    banner.style.cssText='margin-top:14px;padding:14px 18px;border-radius:14px;background:linear-gradient(135deg,#3a0ca3,#7209b7);color:#fff;font-size:14px;font-weight:700;line-height:1.5;text-align:center;box-shadow:0 4px 18px rgba(114,9,183,.4);';
+    banner.textContent='✨ 30/30 na primeira tentativa! Você domina o conteúdo de Diferença de Preços em Criptomoedas. Bússola calibrada!';
+    heroEl.appendChild(banner);
+  }
+
+  document.getElementById('stats-grid').innerHTML=
+    '<div class="stat-box"><div class="stat-value">'+total+'/30</div><div class="stat-label">Questões concluídas</div></div>'+
+    '<div class="stat-box green"><div class="stat-value">'+correct+'</div><div class="stat-label">Acertos na 1ª tentativa</div></div>'+
+    '<div class="stat-box red"><div class="stat-value">'+errors+'</div><div class="stat-label">Total de erros cometidos</div></div>'+
+    '<div class="stat-box '+(pct>=80?'green':pct>=60?'':'red')+'"><div class="stat-value">'+pct+'%</div><div class="stat-label">Aproveitamento geral</div></div>';
+
+  document.getElementById('detail-table').innerHTML=S.results.map(function(r){
+    return '<div class="detail-row"><div><div class="dr-q">Atendimento '+r.scenarioId+' · '+r.phaseLabel+'</div><div class="dr-t">'+r.scenarioTitle+'</div></div>'+
+    '<div class="detail-row-right">'+(r.errors>0?'<span class="err-badge">'+r.errors+' erro'+(r.errors>1?'s':'')+'</span>':'')+
+    '<span>'+(r.firstAttemptCorrect?'✅':'❌')+'</span></div></div>';
+  }).join('');
+
+  if(perfect)launchConfetti();
+  saveToSheets(correct,errors,total,pct);
+}
+
+// ── SAVE ───────────────────────────────────────────────────────────────────────
+async function saveToSheets(correct,errors,total,pct){
+  const el=document.getElementById('save-status');
+  el.className='save-status';el.textContent='⏳ Salvando resultados na planilha…';
+  const dateStr=new Date(S.startTime).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});
+  const payload={
+    sheet_id:SHEET_ID,nome:S.userName,email:S.userEmail,data_hora:dateStr,
+    acertos:correct,erros:errors,total:total,pct:pct+'%',
+    detalhes:S.results.map(r=>({atendimento:'Atendimento '+r.scenarioId,fase:r.phaseLabel,titulo:r.scenarioTitle,resultado:r.firstAttemptCorrect?'ACERTO':'ERRO',erros_cometidos:r.errors}))
+  };
+  try{
+    const resp=await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
+    const text=await resp.text();
+    if(resp.ok||text.includes('OK')){el.className='save-status ok';el.textContent='✅ Resultados salvos com sucesso nas duas abas da planilha!';}
+    else throw new Error(text||'Resposta inesperada');
+  }catch(e){
+    el.className='save-status err';
+    el.textContent='⚠️ Não foi possível salvar automaticamente. Dados: '+S.userName+' | '+S.userEmail+' | Acertos: '+correct+'/'+total+' | Erros: '+errors;
+  }
+}
+
+// ── BOOT ───────────────────────────────────────────────────────────────────────
+// Atribui via propriedade JS (não atributo HTML) — nunca bloqueado por CSP.
+// Tenta imediatamente e repete até os elementos existirem no DOM.
+(function tryBoot(){
+  var bs=document.getElementById('btn-start');
+  if(!bs){setTimeout(tryBoot,30);return;}
+  bs.onclick=startSimulator;
+  var ni=document.getElementById('inp-name');
+  var ei=document.getElementById('inp-email');
+  var br=document.getElementById('btn-restart');
+  if(ni)ni.onkeydown=function(e){if(e.key==='Enter')startSimulator();};
+  if(ei)ei.onkeydown=function(e){if(e.key==='Enter')startSimulator();};
+  if(br)br.onclick=function(){
+    if(ni)ni.value='';if(ei)ei.value='';showScreen('login');
+  };
+})();
+</script>
+</body>
+</html>
